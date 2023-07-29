@@ -259,6 +259,11 @@ function checkHelmDependenciesAndUpdateAzureDevOps() {
                 awk '{ printf "\t%s\n", $0 }' diff_result.txt >shift_diff_result.txt
                 shift_diff_result=$(cat shift_diff_result.txt)
 
+                # If the diff output is too large for display, overwrite it with a message
+                if ((${#shift_diff_result} > 4000)); then
+                    shift_diff_result="The diff output is too large for display (>4000 characters). Please refer to ArtifactHub directly for a detailed comparison of changes between the $version and $current_version."
+                fi
+
                 # Delete the temporary files
                 rm old_values.yaml new_values.yaml diff_result.txt shift_diff_result.txt
 
@@ -266,7 +271,7 @@ function checkHelmDependenciesAndUpdateAzureDevOps() {
                 sed -i.bak "s/version: $version/version: $current_version/g" "$(basename $chart_file)" && rm "$(basename $chart_file).bak"
 
                 # Create a new branch for this change
-                git checkout -b update-helm-$sanitized_name-$current_version
+                git checkout -b update-helm-$sanitized_name-$current_version || true
                 # Add the changes to the staging area
                 git add "$(basename $chart_file)"
 
